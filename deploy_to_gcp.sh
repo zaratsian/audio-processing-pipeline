@@ -1,7 +1,6 @@
 # Create Google Cloud Storage Resources
 gsutil mb -c standard -l US 'gs://z-audio-dropzone' # Audio file dropzone
-gsutil mb -c standard -l US 'gs://z-txt-dropzone'   # Test / SMS file dropzone
-gsutil mb -c standard -l US 'gs://z-audio-text'     # Location of speech-to-text results
+gsutil mb -c standard -l US 'gs://z-txt-dropzone'   # Landing zone for speech-to-text results as well as raw SMS/txt messages
 gsutil mb -c standard -l US 'gs://z-text-results'   # Temporary landing zone for text results
 
 # Setup BigQuery Dataset and Table(s)
@@ -22,15 +21,15 @@ gcloud functions deploy speech-to-text \
     --max-instances 2 \
     --allow-unauthenticated
 
-# Deploy Cloud Function: text-processing
-gcloud functions deploy text-processing \
+# Deploy Cloud Function: nlp
+gcloud functions deploy nlp \
     --region us-central1 \
     --runtime python39 \
     --memory 1024MB \
     --entry-point main \
     --trigger-event google.storage.object.finalize \
-    --trigger-resource 'z-audio-text' \
-    --source cloud_functions/rv-video-catalog-matching \
+    --trigger-resource 'z-txt_dropzone' \
+    --source cloud_functions/nlp \
     --max-instances 2 \
     --allow-unauthenticated
 
