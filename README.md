@@ -3,7 +3,7 @@
 This repo contains code, deployed on Google Cloud services, that processes audio and text files. 
 
 Reference Architecture:
-![Architecture](./assets/architecture.jpg)
+![Architecture](./assets/architecture.png)
 
 ## Getting Started
 
