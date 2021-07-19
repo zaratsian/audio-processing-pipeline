@@ -1,0 +1,39 @@
+[
+    {
+        "name": "source",
+        "type": "STRING",
+        "mode": "NULLABLE"
+    },
+    {
+        "name": "doc_sentiment",
+        "type": "FLOAT64",
+        "mode": "NULLABLE"
+    },
+    {
+	"name": "doc_magnitude",
+	"type": "FLOAT64",
+	"mode": "NULLABLE"
+    },
+    {
+        "name": "sentences",
+        "type": "RECORD",
+        "mode": "REPEATED",
+        "fields": [
+            {
+                "name": "sentence",
+                "type": "STRING",
+                "mode": "NULLABLE"
+            },
+            {
+                "name": "sentiment",
+                "type": "FLOAT64",
+                "mode": "NULLABLE"
+            },
+            {
+                "name": "magnitude",
+                "type": "FLOAT64",
+                "mode": "NULLABLE"
+            }
+        ]
+    }
+]

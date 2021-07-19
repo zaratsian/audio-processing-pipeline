@@ -1,0 +1,24 @@
+[
+    {
+        "name": "source",
+        "type": "STRING",
+        "mode": "NULLABLE"
+    },
+    {
+        "name": "phrases",
+        "type": "RECORD",
+        "mode": "REPEATED",
+        "fields": [
+            {
+                "name": "phrase",
+                "type": "STRING",
+                "mode": "NULLABLE"
+            },
+            {
+                "name": "frequency",
+                "type": "INT64",
+                "mode": "NULLABLE"
+            }
+        ]
+    }
+]
