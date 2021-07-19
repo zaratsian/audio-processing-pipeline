@@ -1,8 +1,9 @@
-import datetime
 import re,json
 from google.cloud import storage
 from google.cloud.storage.blob import Blob
-from google.cloud import speech
+from google.cloud import language_v1
+import nltk
+from nltk.corpus import stopwords
 
 
 bq_sentiment_dataset = 'audio_text_analysis'
