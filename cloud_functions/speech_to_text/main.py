@@ -5,7 +5,7 @@ from google.cloud.storage.blob import Blob
 from google.cloud import speech
 
 
-gcs_results_bucket = 'z-audio-text'
+gcs_results_bucket = 'z-txt-dropzone'
 
 
 def gcp_storage_upload_string(source_string, bucket_name, blob_name):
