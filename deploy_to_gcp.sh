@@ -28,7 +28,7 @@ gcloud functions deploy nlp \
     --memory 1024MB \
     --entry-point main \
     --trigger-event google.storage.object.finalize \
-    --trigger-resource 'z-txt_dropzone' \
+    --trigger-resource 'z-txt-dropzone' \
     --source cloud_functions/nlp \
     --max-instances 2 \
     --allow-unauthenticated
