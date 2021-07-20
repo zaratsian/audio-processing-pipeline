@@ -121,12 +121,12 @@ def main(event,context):
     # Sentiment Analysis
     print(f'[ INFO ] Writing sentiment results to BQ table {bq_sentiment_dataset}.{bq_sentiment_table}')
     sentiment_results = nlp_sentiment(text_blob, source=event['name'])
-    bq_streaming_insert(bq_dataset=bq_sentiment_dataset, bq_table=bq_sentiment_table, sentiment_results)
+    bq_streaming_insert(bq_dataset=bq_sentiment_dataset, bq_table=bq_sentiment_table, rows_to_insert=[sentiment_results])
     
     # Phrase Extraction
     print(f'[ INFO ] Writing phrases to {bq_phrase_dataset}.{bq_phrase_table}')
     bigram_results = get_bigrams(text_blob, bigram_limit=2, phrase_dictionary=[], source=event['name'])
-    bq_streaming_insert(bq_dataset=bq_phrase_dataset, bq_table=bq_phrase_table, bigram_results)
+    bq_streaming_insert(bq_dataset=bq_phrase_dataset, bq_table=bq_phrase_table, rows_to_insert=[bigram_results])
 
 
 
