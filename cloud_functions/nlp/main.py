@@ -1,4 +1,5 @@
 import re,json
+from google.cloud import bigquery
 from google.cloud import storage
 from google.cloud.storage.blob import Blob
 from google.cloud import language_v1
