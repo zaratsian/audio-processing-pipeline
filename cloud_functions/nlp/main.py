@@ -3,11 +3,14 @@ from google.cloud import bigquery
 from google.cloud import storage
 from google.cloud.storage.blob import Blob
 from google.cloud import language_v1
+import google.cloud.dlp
 import nltk
 nltk.download('stopwords')
 from nltk.corpus import stopwords
 nltk.download('punkt')
 
+
+gcp_project = 'dz-apps'
 
 bq_sentiment_dataset = 'audio_text_analysis'
 bq_sentiment_table   = 'sentiment'
@@ -131,6 +134,60 @@ def get_bigrams(text_blob, bigram_frequency_threshold=2, phrase_dictionary=[], s
         print('[ EXCEPTION ] At get_bigrams. {}'.format(e))
 
 
+def deidentify_with_mask(project, input_str, masking_character=None, number_to_mask=0):
+    """Uses the Data Loss Prevention API to deidentify sensitive data in a
+    string by redacting matched input values.
+    Args:
+        project: The Google Cloud project id to use as a parent resource.
+        input_str: The string to deidentify (will be treated as text).
+        info_types: A list of strings representing info types to look for. https://cloud.google.com/dlp/docs/infotypes-reference
+    Returns:
+        None; the response from the API is printed to the terminal.
+    """
+    
+    # Instantiate a client
+    dlp = google.cloud.dlp_v2.DlpServiceClient()
+    
+    # Convert the project id into a full resource id.
+    parent = f"projects/{project}"
+    
+    # Construct inspect configuration dictionary
+    info_types = ['FIRST_NAME','LAST_NAME','PERSON_NAME','GENDER','EMAIL_ADDRESS','CREDIT_CARD_NUMBER','PHONE_NUMBER']
+    inspect_config = {"info_types": [{"name": info_type} for info_type in info_types]}
+    
+    # Construct deidentify configuration dictionary
+    deidentify_config = {
+        "info_type_transformations": {
+            "transformations": [
+                {
+                    "primitive_transformation": {
+                        "character_mask_config": {
+                            "masking_character": masking_character,
+                            "number_to_mask": number_to_mask,
+                        }
+                    }
+                }
+            ]
+        }
+    }
+    
+    # Construct item
+    item = {"value": input_str}
+    
+    # Call the API
+    response = dlp.deidentify_content(
+        request={
+            "parent": parent,
+            "deidentify_config": deidentify_config,
+            "inspect_config": inspect_config,
+            "item": item,
+        }
+    )
+    
+    # Print out the results.
+    print(response.item.value)
+
+
 def main(event,context):
     
     source = event['name']
@@ -139,6 +196,9 @@ def main(event,context):
     
     print('[ INFO ] Processing {}'.format(gcs_uri))
     text_blob = gcp_storage_download_as_string(event['bucket'], event['name'])
+    
+    # Apply DLP to text_blob
+    text_blob = deidentify_with_mask(project=gcp_project, input_str=text_blob, masking_character=None, number_to_mask=0)
     
     # Sentiment Analysis
     print(f'[ INFO ] Writing sentiment results to BQ table {bq_sentiment_dataset}.{bq_sentiment_table}')
