@@ -4,7 +4,9 @@ from google.cloud import storage
 from google.cloud.storage.blob import Blob
 from google.cloud import language_v1
 import nltk
+nltk.download('stopwords')
 from nltk.corpus import stopwords
+nltk.download('punkt')
 
 
 bq_sentiment_dataset = 'audio_text_analysis'
@@ -38,6 +40,19 @@ def gcp_storage_download_as_string(bucket_name, blob_name):
     
     except Exception as e:
         print('[ ERROR ] {}'.format(e))
+
+
+def bq_query_table(query):
+    try:
+        bigquery_client = bigquery.Client()
+        query_job = bigquery_client.query(
+            query,
+            location='US')
+        
+        return query_job
+    except Exception as e:
+        print('[ EXCEPTION ] Unable to query bq table. {}'.format(e))
+        return None
 
 
 def bq_streaming_insert(bq_dataset, bq_table, rows_to_insert=[{}]):
@@ -91,27 +106,34 @@ def nlp_sentiment(text_blob, source=''):
 
 
 def get_bigrams(text_blob, bigram_frequency_threshold=2, phrase_dictionary=[], source=''):
-    '''
-    bigram_frequency_threshold: Only return bigrams that are equal to, or more frequent, than the threshold number.
-    '''
-    stop_words = set(stopwords.words('english'))
-    
-    tokens = nltk.word_tokenize(text_blob)
-    tokens = [t.lower() for t in tokens if t not in stop_words and len(t) >= 3]
-    
-    bigrams = nltk.bigrams(tokens)
-    
-    freqdist = nltk.FreqDist(bigrams)
-    freqdist_sorted = {k: v for k, v in sorted(freqdist.items(), key=lambda item: item[1], reverse=True) if v >= bigram_frequency_threshold}
-    
-    bigram_results = {}
-    bigram_results['source'] = source
-    bigram_results['phrases'] = [{'phrase':' '.join(k) ,'freq':v} for k,v in freqdist_sorted.items()]
-    
-    return bigram_results
+    try:
+        '''
+        bigram_frequency_threshold: Only return bigrams that are equal to, or more frequent, than the threshold number.
+        '''
+        text_blob = text_blob.decode('utf-8')
+        
+        stop_words = set(stopwords.words('english'))
+        
+        tokens = nltk.word_tokenize(text_blob)
+        tokens = [t.lower() for t in tokens if t not in stop_words and len(t) >= 3]
+        
+        bigrams = nltk.bigrams(tokens)
+        
+        freqdist = nltk.FreqDist(bigrams)
+        freqdist_sorted = {k: v for k, v in sorted(freqdist.items(), key=lambda item: item[1], reverse=True) if v >= bigram_frequency_threshold}
+        
+        bigram_results = {}
+        bigram_results['source'] = source
+        bigram_results['phrases'] = [{'phrase':' '.join(k) ,'frequency':v} for k,v in freqdist_sorted.items()]
+        
+        return bigram_results
+    except Exception as e:
+        print('[ EXCEPTION ] At get_bigrams. {}'.format(e))
 
 
 def main(event,context):
+    
+    source = event['name']
     
     gcs_uri = 'gs://{}/{}'.format(event['bucket'], event['name'])
     
@@ -120,13 +142,17 @@ def main(event,context):
     
     # Sentiment Analysis
     print(f'[ INFO ] Writing sentiment results to BQ table {bq_sentiment_dataset}.{bq_sentiment_table}')
-    sentiment_results = nlp_sentiment(text_blob, source=event['name'])
-    bq_streaming_insert(bq_dataset=bq_sentiment_dataset, bq_table=bq_sentiment_table, rows_to_insert=[sentiment_results])
+    existing_records_sentiment = [row['source'] for row in bq_query_table(f''' SELECT source FROM `dz-apps.{bq_sentiment_dataset}.{bq_sentiment_table}` ''')]
+    if source not in existing_records_sentiment:
+        sentiment_results = nlp_sentiment(text_blob, source=source)
+        bq_streaming_insert(bq_dataset=bq_sentiment_dataset, bq_table=bq_sentiment_table, rows_to_insert=[sentiment_results])
     
     # Phrase Extraction
     print(f'[ INFO ] Writing phrases to {bq_phrase_dataset}.{bq_phrase_table}')
-    bigram_results = get_bigrams(text_blob, bigram_limit=2, phrase_dictionary=[], source=event['name'])
-    bq_streaming_insert(bq_dataset=bq_phrase_dataset, bq_table=bq_phrase_table, rows_to_insert=[bigram_results])
+    existing_records_phrases = [row['source'] for row in bq_query_table(f''' SELECT source FROM `dz-apps.{bq_phrase_dataset}.{bq_phrase_table}` ''')]
+    if source not in existing_records_phrases:
+        bigram_results = get_bigrams(text_blob, bigram_frequency_threshold=2, phrase_dictionary=[], source=source)
+        bq_streaming_insert(bq_dataset=bq_phrase_dataset, bq_table=bq_phrase_table, rows_to_insert=[bigram_results])
 
 
 

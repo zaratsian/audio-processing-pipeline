@@ -20,7 +20,7 @@
         "mode": "REPEATED",
         "fields": [
             {
-                "name": "sentence",
+                "name": "text",
                 "type": "STRING",
                 "mode": "NULLABLE"
             },
