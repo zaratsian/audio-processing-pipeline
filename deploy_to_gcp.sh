@@ -1,3 +1,12 @@
+# Enable APIs
+gcloud services enable storage.googleapis.com  # Enable Cloud Storage API
+gcloud services enable bigquery.googleapis.com # Enable BQ API
+gcloud services enable language.googleapis.com # Enable NLP APIs
+gcloud services enable speech.googleapis.com   # Enable Speech-to-Text API
+gcloud services enable dlp.googleapis.com      # Enable Data Loss Prevention (DLP)
+
+
+
 # Create Google Cloud Storage Resources
 gsutil mb -c standard -l US 'gs://z-audio-dropzone' # Audio file dropzone
 gsutil mb -c standard -l US 'gs://z-txt-dropzone'   # Landing zone for speech-to-text results as well as raw SMS/txt messages
